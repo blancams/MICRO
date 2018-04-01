@@ -28,20 +28,20 @@ MOV AX, EXTRA
 MOV ES, AX
 MOV SP, 64 ; LOAD THE STACK POINTER WITH THE HIGHEST VALUE
 ; ; PROGRAM START
-	   MOV DI, 4
-	   MOV BX, 65335
-	   MOV AX, BX
-	   MOV BX, 10
-bucle: MOV DX, 0h
-	   DIV BX
-	   ADD DX, 30h
-	   MOV array[DI], DL
-	   DEC DI
-	   CMP DX, 30h
-	   JNE bucle
-	   MOV DX, OFFSET array
-	   MOV AH, 09h
-	   INT 21h
+		MOV DI, 4
+		MOV BX, 65335
+		MOV AX, BX
+		MOV BX, 10
+bucle:	MOV DX, 0h
+		DIV BX
+		ADD DX, 30h
+		MOV array[DI], DL
+		DEC DI
+		CMP DX, 30h
+		JNE bucle
+		MOV DX, OFFSET array
+		MOV AH, 09h
+		INT 21h
 ; PROGRAM END
 MOV AX, 4C00H
 INT 21H
