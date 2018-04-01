@@ -1,0 +1,52 @@
+
+; DATA SEGMENT DEFINITION
+DATOS SEGMENT
+	array db 5 dup (0), 13, 10, '$'
+DATOS ENDS 
+;**************************************************************************
+; STACK SEGMENT DEFINITION
+PILA SEGMENT STACK "STACK"
+	DB 40H DUP (0) 
+PILA ENDS
+;**************************************************************************
+; EXTRA SEGMENT DEFINITION
+EXTRA SEGMENT
+	RESULT DW 0,0
+EXTRA ENDS
+;**************************************************************************
+; CODE SEGMENT DEFINITION
+CODE SEGMENT
+ASSUME CS: CODE, DS: DATOS, ES: EXTRA, SS: PILA
+; BEGINNING OF THE MAIN PROCEDURE
+INICIO PROC
+; INITIALIZE THE SEGMENT REGISTERS
+MOV AX, DATOS
+MOV DS, AX
+MOV AX, PILA
+MOV SS, AX
+MOV AX, EXTRA
+MOV ES, AX
+MOV SP, 64 ; LOAD THE STACK POINTER WITH THE HIGHEST VALUE
+; ; PROGRAM START
+	   MOV DI, 4
+	   MOV BX, 65335
+	   MOV AX, BX
+	   MOV BX, 10
+bucle: MOV DX, 0h
+	   DIV BX
+	   ADD DX, 30h
+	   MOV array[DI], DL
+	   DEC DI
+	   CMP DX, 30h
+	   JNE bucle
+	   MOV DX, OFFSET array
+	   MOV AH, 09h
+	   INT 21h
+; PROGRAM END
+MOV AX, 4C00H
+INT 21H
+INICIO ENDP
+; END OF CODE SEGMENT
+CODE ENDS
+; END OF PROGRAM. OBS: INCLUDES THE ENTRY OR THE FIRST PROCEDURE (i.e. “INICIO”)
+END INICIO 
