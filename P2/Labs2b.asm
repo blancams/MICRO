@@ -1,5 +1,5 @@
 ;**************************************************************************
-; MBS 2018 - PRACTICE 2 - EXERCISE 2
+; MBS 2018 - PRACTICE 2 - EXERCISE 3
 ; Team number:
 ; 4
 ;
@@ -11,7 +11,7 @@
 ; DATA SEGMENT DEFINITION
 DATOS SEGMENT
 	; Character strings to build the formatted computation result
-	input db 'Input: "$'													; First line: "Input:" + input vector
+	input db 13, 10, 'Input: "$'											; First line: "Input:" + input vector
 	output db '"', 13, 10, 'Output: "$'										; Second line: "Output:" + output vector
 	computation db '"', 13, 10, 'Computation:$'								; Third line: "Computation:"
 	row1 db 13, 10, '     | P1 | P2 | D1 | P4 | D2 | D3 | D4 $'				; Fourth line: Bit headers
@@ -22,9 +22,11 @@ DATOS SEGMENT
 	row3 db 13, 10, 'P1   | $'												; Parity of bits 1, 2 and 4
 	row4 db 13, 10, 'P2   | $'												; Parity of bits 1, 3 and 4
 	row5 db 13, 10, 'P4   | $'												; Parity of bits 2, 3 and 4
-
-	; Data to compute
-	vector db 1, 0, 1, 1													; Original 4-bit vector to compute and to obtain parity bits from, each bit stored in 1 byte
+	initial_message db 'Introduce a number between 0 and 15: $'				; Initial message to inform the user
+	message_error db 13, 10, 'The number is not valid$'						; Message error when the number introduced is not valid
+	
+	vector_i db 4 dup (?), '$'												; Vector where the number introduced by the user and other information will be stored for computing purposes
+	vector db 4 dup (0)														; 4-bit vector (each bit stored in 1 byte) that contains the number introduced in binary
 	matrix db 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,1,1,0,1,1,0,1,1,0,1,1,1		; Matrix to be multiplied by the vector to obtain the parity bits
 	result db 7 dup(0)														; Output 7-bit vector, each bit stored in 1 byte
 DATOS ENDS 
@@ -55,6 +57,62 @@ MOV SP, 64 ; LOAD THE STACK POINTER WITH THE HIGHEST VALUE
 
 ; PROGRAM START
 
+		; Prints the initial message
+		MOV AH, 9h
+		LEA DX, initial_message
+		INT 21h
+
+		; Requests introduction of a number.
+		MOV AH, 0AH
+		LEA DX, vector_i
+		MOV vector_i[0], 3								; The maximum size of the number is 2 characters, so we need to be able to catch 3 (two digits + carriage return)
+		INT 21h
+		
+		; Checks the value introduced by the user
+		MOV AL, vector_i[1]
+		CMP AL, 1										; If the user has introduced one character, we jump to 'oned' where proper management will be performed
+		JE  oned
+		CMP AL, 2										; If the user has introduced two characters, we jump to 'twod' where proper management will be performed
+		JE  twod
+		JMP fail										; The other option happens when no character has been introduced by the user. In this case, there is a failure to be dealt with.
+		
+		; Manages the case in which a one-digit number was introduced. In this case, we only have to add the number itself (after substracting 30h to decode it from ASCII)
+oned:	MOV AX, 0
+		MOV AL, vector_i[2]
+		SUB AL, 30h
+		JMP convrt
+		
+		; Manages the case in which a two-digit number was introduced. In this case, we need to multiply the first character by 10 and then sum the second character. For
+		; example, if the user introduced 14, we need to store the number by multiplying 1*10 and summing 4 (after substracting 30h wherever needed)
+twod:	MOV AX, 0
+		MOV AL, vector_i[2]
+		SUB AL, 30h
+		MOV BX, 10
+		MUL BX
+		ADD AL, vector_i[3]
+		SUB AL, 30h
+		CMP AL, 0Fh										; If the result of the operation is less or equal than 15, then it jumps to 'convrt' where the program will continue
+		JBE convrt										; Otherwise, the program goes to failure management
+
+		; Deals with failures, which will happen if the user has not introduced any characters or if the number introduced was greater than 15
+fail:	MOV AH, 9h
+		LEA DX, message_error
+		INT 21h
+		JMP fin
+
+		; Converts the number introduced (now stored in AX) to binary. As the number is less or equal than 15 it fits in 4 bits, and as 'vector' is initialized to "0000" we
+		; fill each bit from the end to the start of 'vector' until any quotient is 0, in which case we have finished and the first bits must stay being 0.
+convrt:	MOV DI, 3										; Initialization of DI, which will contain the index for 'vector' writings
+		MOV BX, 2										; To convert any number to binary we have to divide by 2 in a loop until any quotient is 0
+binary:	MOV DX, 0										; Reset of DX as it is going to change each time we perform a division
+		DIV BX											; Division of DX:AX by 2, quotient is stored in AX and remainder in DX (the remainder will fit in 1 byte so we only need DL)
+		MOV vector[DI], DL								; We fill 'vector' with the proper value
+		DEC DI											; We decrement the index
+		CMP AX, 0										; If the quotient (AX) is 0, we have finished, otherwise we repeat the loop
+		JNE binary
+
+		; The rest is just what we did in the previous exercise with no changes whatsoever
+		
 		; Saves to DX:BX the 4-bit input number
 		MOV DX, WORD PTR vector[0]						; DH = vector[1], DL = vector[0]
 		MOV BX, WORD PTR vector[2]						; BH = vector[3], BL = vector[2]
@@ -72,8 +130,8 @@ MOV SP, 64 ; LOAD THE STACK POINTER WITH THE HIGHEST VALUE
 		call print
 	
 ; PROGRAM END
-MOV AX, 4C00H
-INT 21H
+fin:	MOV AX, 4C00H
+		INT 21H
 INICIO ENDP
 
 ; Subroutine that multiplies the 4-bit vector contained in DX:BX {DL, DH, BL, BH} by the 4x7 matrix contained in 'matrix'
