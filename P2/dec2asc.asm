@@ -1,3 +1,12 @@
+;**************************************************************************
+; MBS 2018 - PRACTICE 2 - EXERCISE 1
+; Team number:
+; 4
+;
+; Authors names:
+; - Blanca Martin Selgas
+; - Fernando Villar Gomez
+;**************************************************************************
 
 ; DATA SEGMENT DEFINITION
 DATOS SEGMENT
