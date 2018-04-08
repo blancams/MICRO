@@ -37,21 +37,20 @@ PUSH BP
 MOV BP, SP
 PUSH BX DX ; Save registers
 
-MOV DX, [BP + 6]
-LES BX, [BP + 10] ; read parameters from stack
+MOV AX, [BP + 6] ;num
+LES BX, [BP + 8] ; el char*
 
-		MOV DI, 4				; DI is going to be the index of the array
-		MOV AX, DX				; ...and to AX to perform operations
+		MOV DI, 3				; DI is going to be the index of the array
 		MOV CX, 10				; We load 10 to BX, as it's going to be used as modulo
 bucle:	MOV DX, 0h				; Initialization of DX to perform the division
 		DIV CX					; DX:AX / BX, AX keeps the quotient (which is (number-array[i]/10)) and DX stores the remainder
-		ADD DX, 30h				; We add 30h to the remainder to convert it to ASCII code
 		MOV ES:[BX][DI], DL		; We store the value coded to ASCII in the array
 		DEC DI					; Decrementation of DI to keep looping
-		CMP DX, 30h				; Loop stops if the result of the division was 0 (as we have added 30h after the division, we compare DX with 30h)
+		CMP DX, 0h				; Loop stops if the result of the division was 0 (as we have added 30h after the division, we compare DX with 30h)
 		JNE bucle
 		
 POP DX BX BP
 RET
 _fillUpAttempt ENDP
 PRAC3A ENDS ; End of Segment
+END
