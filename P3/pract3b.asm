@@ -19,16 +19,12 @@ MOV SI, 0
 it: 	MOV DX, DS:[BP][SI]
 		MOV CX, ES:[BX][SI]
 		CMP DL, CL
-		JE counter
-ll:		INC SI
+		JNE cnt
+		INC DI
+cnt:	INC SI
 		CMP SI, 4
 		JE bye
-		JNE it
-		
-counter:CMP SI, 4
-		JE bye
-		INC DI
-		JMP ll
+		JMP it
 
 bye:	MOV AX, DI
 		POP DI SI CX DS DX BX BP
@@ -53,23 +49,18 @@ att:	MOV DI, 0
 		CMP SI, 0
 		JE b
 		DEC SI
-		
 h:		MOV CX, DS:[BP][SI]
 		MOV DX, ES:[BX][DI]
 		CMP CL, DL
+		JNE cn
+		CMP SI, DI
 		JE cn
-llamada:INC DI
+		INC AX		
+cn:		INC DI
 		CMP DI, 4
 		JNE h
 		JMP att
-		
-cn:		CMP SI, DI
-		JE llamada
-		INC AX
-		CMP SI, 4
-		JE b
-		JMP llamada
-
+	
 b:		POP DI SI CX DS DX BX BP
 		RET
 _computeSemiMatches ENDP
