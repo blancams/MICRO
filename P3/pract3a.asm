@@ -56,13 +56,13 @@ LES BX, [BP + 8] 				; Reads second parameter, the array of 4 char variables to 
 ; This is the method with which we coded the first exercise of the previous practice
 ; It splits a 4-digit number into its four digits, storing each digit in a byte
 ; Those bytes belong to the array loaded through BX
-		MOV DI, 3				; DI is going to be the index of the array
+		MOV DI, 4				; DI is going to be the index of the array
 		MOV CX, 10				; We load 10 to BX, as it's going to be used as modulo
-bucle:	MOV DX, 0h				; Initialization of DX to perform the division
+bucle:	DEC DI					; Decrementation of DI to keep looping
+		MOV DX, 0h				; Initialization of DX to perform the division
 		DIV CX					; DX:AX / BX, AX keeps the quotient (which is (number-array[i]/10)) and DX stores the remainder
-		MOV ES:[BX][DI], DL		; We store the value coded to ASCII in the array
-		DEC DI					; Decrementation of DI to keep looping
-		CMP DX, 0h				; Loop stops if the result of the division was 0 (as we have added 30h after the division, we compare DX with 30h)
+		MOV ES:[BX][DI], DL		; We store the value in the array
+		CMP DI, 0h				; Loop stops if the result of the division was 0
 		JNE bucle
 
 POP ES DX BX CX DI BP			; Recovers used registers
