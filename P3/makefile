@@ -1,3 +1,13 @@
+#**************************************************************************
+# MBS 2018 - PRACTICE 3 - MAKEFILE
+# Team number:
+# 4
+#
+# Authors names:
+# - Blanca Martin Selgas
+# - Fernando Villar Gomez
+#**************************************************************************
+
 all: pract3.exe
 
 pract3.exe: pract3.obj pract3a.obj pract3b.obj
