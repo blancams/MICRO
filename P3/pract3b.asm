@@ -5,7 +5,7 @@ ASSUME CS: PRAC3A
 _computeMatches PROC FAR
 PUSH BP
 MOV BP, SP
-PUSH BX DX DS CX SI DI; Save registers
+PUSH BX DX DS CX SI DI ES; Save registers
 
 LES BX, [BP + 6] 
 MOV AX, ES
@@ -27,18 +27,16 @@ cnt:	INC SI
 		JMP it
 
 bye:	MOV AX, DI
-		POP DI SI CX DS DX BX BP
+		POP ES DI SI CX DS DX BX BP
 		RET
 _computeMatches ENDP
 
 _computeSemiMatches PROC FAR
 PUSH BP
 MOV BP, SP
-PUSH BX DX DS CX SI DI; Save registers
+PUSH BX DX DS CX SI DI ES; Save registers
 
-LES BX, [BP + 6] 
-MOV AX, ES
-MOV DS, AX
+LDS BX, [BP + 6] 
 MOV CX, BX
 LES BX, [BP + 10]
 MOV BP, CX
@@ -61,7 +59,7 @@ cn:		INC DI
 		JNE h
 		JMP att
 	
-b:		POP DI SI CX DS DX BX BP
+b:		POP ES DI SI CX DS DX BX BP
 		RET
 _computeSemiMatches ENDP
 PRAC3A ENDS ; End of Segment

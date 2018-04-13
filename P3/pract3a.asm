@@ -5,7 +5,7 @@ ASSUME CS: PRAC3A
 _checkSecretNumber PROC FAR
 PUSH BP
 MOV BP, SP
-PUSH BX DX ; Save registers
+PUSH BX DX ES ; Save registers
 
 LES BX, [BP + 6] ; read parameters from stack
 MOV AL, ES:[BX]
@@ -28,14 +28,14 @@ JE bye
 MOV AX, 0
 JMP nobye
 bye:   MOV AX, 1 ; data results in AX.
-nobye: POP DX BX BP ; recover used registers
+nobye: POP ES DX BX BP ; recover used registers
 RET
 _checkSecretNumber ENDP
 
 _fillUpAttempt PROC FAR
 PUSH BP
 MOV BP, SP
-PUSH BX DX ; Save registers
+PUSH DI CX BX DX ES ; Save registers
 
 MOV AX, [BP + 6] ;num
 LES BX, [BP + 8] ; el char*
@@ -49,7 +49,7 @@ bucle:	MOV DX, 0h				; Initialization of DX to perform the division
 		CMP DX, 0h				; Loop stops if the result of the division was 0 (as we have added 30h after the division, we compare DX with 30h)
 		JNE bucle
 		
-POP DX BX BP
+POP ES DX BX CX DI BP
 RET
 _fillUpAttempt ENDP
 PRAC3A ENDS ; End of Segment
