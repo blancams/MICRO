@@ -1,3 +1,13 @@
+/**************************************************************************
+* MBS 2018 - PRACTICE 3 - C CODE
+* Team number:
+* 4
+*
+* Authors names:
+* - Blanca Martin Selgas
+* - Fernando Villar Gomez
+**************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #define TRUE 1
@@ -21,18 +31,19 @@ int main(void)
 	 
 	do {   
 		for (i=0; i<4; i++)    
-		secretNum[i] = rand() % 10;   
+			secretNum[i] = rand() % 10;   
 		repeated = checkSecretNumber(secretNum);  
-		} while (repeated == TRUE);   
+	} while (repeated == TRUE);   
 
-		numAttempts = 0;    
+		numAttempts = 0;
+		
 	do {   
 		numAttempts++;
 		
-		do    {    
+		do {    
 			printf("Please enter attempt %u [0000 - 9999]: ", numAttempts );    
 			scanf("%u", &attempt);   
-			}   while ( attempt > 9999); 
+		} while ( attempt > 9999); 
 			
 		fillUpAttempt( attempt, attemptDigits );   
 		matches = computeMatches(secretNum, attemptDigits);   
