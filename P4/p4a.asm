@@ -1,29 +1,35 @@
 code SEGMENT
 	ASSUME cs : code
 	ORG 256
-	
-fernando db "Fernando Villar Gomez$", 13, 10
-blanca db "Blanca Martin Selgas$", 13, 10
-team db "Team 9$", 13, 10
-string1 db "Status: Installed$", 13, 10
-string2 db "Status: Not Installed$", 13, 10
-err db "Arguments error$", 13, 10
 
-start:
+
+start: 
+	jmp real_start
+	fernando db "Fernando Villar Gomez$", 13, 10
+	blanca db "Blanca Martin Selgas$", 13, 10
+	team db "Team 9$", 13, 10
+	string1 db "Status: Installed$", 13, 10
+	string2 db "Status: Not Installed$", 13, 10
+	stringerr db "Arguments error$", 13, 10
+	
+real_start:
 	mov ah, 9h
-	cmp ds:[80h], 1
+	cmp byte ptr ds:[80h], 0
 	je no_args
-	cmp ds:[80h], 4
+	cmp byte ptr ds:[80h], 3
 	jne wrong_args
-	cmp ds:[82h], 2Fh
+	cmp byte ptr ds:[82h], 2Fh
 	jne wrong_args
-	cmp ds:[83h], 49h
-	je installer
-	cmp ds:[83h], 55h
-	je uninstall
+	cmp byte ptr ds:[83h], 49h
+	jne continue
+	jmp installer
+continue:
+	cmp byte ptr ds:[83h], 55h
+	jne wrong_args
+	jmp uninstall
 	
 wrong_args:
-	mov dx, OFFSET err
+	mov dx, OFFSET stringerr
 	jmp print
 	
 no_args:
@@ -35,9 +41,9 @@ no_args:
 	int 21h
 	mov bx, 0
 	mov es, bx
-	cmp es:[55h*4], 0
+	cmp byte ptr es:[55h*4], 0
 	jne instalado
-	cmp es:[55h*4 + 2], 0
+	cmp byte ptr es:[55h*4 + 2], 0
 	jne instalado
 	mov dx, OFFSET string2
 	jmp print
@@ -45,6 +51,8 @@ instalado:
 	mov dx, OFFSET string1
 print:
 	int 21h
+	MOV AX, 4C00H
+	INT 21H
 
 isr PROC FAR ; Interrupt service routine
 	; Save modified registers
@@ -69,7 +77,7 @@ isr PROC FAR ; Interrupt service routine
 	cfin:
 		mov ds:[bp], ax
 		inc bp
-		cmp ds:[bp], 24h
+		cmp byte ptr ds:[bp], 24h
 		jne cesar
 	; Restore modified registers
 	fin:pop bp ax bx
@@ -115,6 +123,7 @@ uninstall PROC ; Uninstall ISR of INT 55h
 	pop es ds cx bx ax
 	ret
 uninstall ENDP
+
 
 code ENDS
 END start
