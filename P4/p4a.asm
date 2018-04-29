@@ -5,15 +5,16 @@ code SEGMENT
 
 start: 
 	jmp real_start
-	fernando db "Fernando Villar Gomez$", 13, 10
-	blanca db "Blanca Martin Selgas$", 13, 10
-	team db "Team 9$", 13, 10
-	string1 db "Status: Installed$", 13, 10
-	string2 db "Status: Not Installed$", 13, 10
-	stringerr db "Arguments error$", 13, 10
+	fernando db "Fernando Villar Gomez", 13, 10, "$"
+	blanca db "Blanca Martin Selgas", 13, 10, "$"
+	team db "Team 9", 13, 10, "$"
+	string1 db "Status: Installed", 13, 10, "$"
+	string2 db "Status: Not Installed", 13, 10, "$"
+	stringerr db "Arguments error", 13, 10, "$"
+	installed db "The interruption's already been installed", 13, 10, "$"
+	uninstalled db "The interruption's not yet been installed", 13, 10, "$"
 	
 real_start:
-	mov ah, 9h
 	cmp byte ptr ds:[80h], 0
 	je no_args
 	cmp byte ptr ds:[80h], 3
@@ -22,10 +23,26 @@ real_start:
 	jne wrong_args
 	cmp byte ptr ds:[83h], 49h
 	jne continue
+	mov dx, OFFSET installed
+	mov cx, 0
+	mov es, cx
+	cmp byte ptr es:[55h*4], 0
+	jne print
+	cmp byte ptr es:[55h*4 + 2], 0
+	jne print
 	jmp installer
 continue:
 	cmp byte ptr ds:[83h], 55h
 	jne wrong_args
+	mov dx, OFFSET uninstalled
+	mov cx, 0
+	mov es, cx
+	cmp byte ptr es:[55h*4], 0
+	je test_sec
+	jmp uninstall
+test_sec:
+	cmp byte ptr es:[55h*4 + 2], 0
+	je print
 	jmp uninstall
 	
 wrong_args:
@@ -33,6 +50,7 @@ wrong_args:
 	jmp print
 	
 no_args:
+	mov ah, 9h
 	mov dx, OFFSET fernando
 	int 21h
 	mov dx, OFFSET blanca
@@ -41,53 +59,60 @@ no_args:
 	int 21h
 	mov bx, 0
 	mov es, bx
-	cmp byte ptr es:[55h*4], 0
-	jne instalado
-	cmp byte ptr es:[55h*4 + 2], 0
-	jne instalado
-	mov dx, OFFSET string2
-	jmp print
-instalado:
 	mov dx, OFFSET string1
+	cmp byte ptr es:[55h*4], 0
+	jne print
+	cmp byte ptr es:[55h*4 + 2], 0
+	jne print
+	mov dx, OFFSET string2
+	
 print:
+	mov ah, 9h
 	int 21h
 	MOV AX, 4C00H
 	INT 21H
 
 isr PROC FAR ; Interrupt service routine
 	; Save modified registers
-	push bx ax bp
+	push bx ax bp dx ds
 	; Routine instructions
 	mov bp, dx
 	cmp ah, 12h
 	jne decrypt
-	mov bx, 12
+	mov bl, 12
 	jmp cesar
 	decrypt:
 		cmp ah, 13h
 		jne fin
-		mov bx, -12
+		mov bl, -12
 	cesar:
-		mov ax, ds:[bp]
-		add ax, bx
-		cmp ax, 127
-		jge over
-		cmp ax, 36
-		jle under
+		mov al, byte ptr ds:[bp]
+		cmp al, 24h
+		je fin
+		add al, bl
+		cmp al, 127
+		jae over
+		cmp al, 36
+		jbe under
 	cfin:
-		mov ds:[bp], ax
+		mov byte ptr ds:[bp], al
 		inc bp
-		cmp byte ptr ds:[bp], 24h
-		jne cesar
+		jmp cesar
 	; Restore modified registers
-	fin:pop bp ax bx
+	fin:
+		mov ah, 9h
+		int 21h
+		mov ah, 2h
+		mov dl, 13
+		int 21h
+		pop ds dx bp ax bx
 		iret
 		
 	over:
-		sub ax, 90
+		sub al, 90
 		jmp cfin
 	under:
-		add ax, 90
+		add al, 90
 		jmp cfin
 isr ENDP
 
