@@ -15,56 +15,56 @@ start:
 	uninstalled db "The interruption's not yet been installed", 13, 10, "$"
 	
 real_start:
-	cmp byte ptr ds:[80h], 0
-	je no_args
-	cmp byte ptr ds:[80h], 3
-	jne wrong_args
-	cmp byte ptr ds:[82h], 2Fh
-	jne wrong_args
-	cmp byte ptr ds:[83h], 49h
-	jne continue
-	mov dx, OFFSET installed
-	mov cx, 0
+	cmp byte ptr ds:[80h], 0   		; If there are no arguments
+	je no_args                 		; we print the information regarding the team and the installation.
+	cmp byte ptr ds:[80h], 3    	; If the number of arguments isn't 3,
+	jne wrong_args              	; those are not valid arguments for the program.
+	cmp byte ptr ds:[82h], 2Fh      ; If the second argument isn't '/'
+	jne wrong_args                  ; those are not valid arguments for the program.
+	cmp byte ptr ds:[83h], 49h      ; If the third argument isn't 'I'
+	jne continue                    ; it might be 'U', so we will check that...
+	mov dx, OFFSET installed        ; if it is 'I', we load into dx the offset of the string 'installed'
+	mov cx, 0                       ; in case the interruption is already installed.
 	mov es, cx
-	cmp byte ptr es:[55h*4], 0
-	jne print
-	cmp byte ptr es:[55h*4 + 2], 0
-	jne print
-	jmp installer
+	cmp byte ptr es:[55h*4], 0      ; We check if it had not been installed previously.
+	jne print                       ; If it had, we inform the user and end the program.
+	cmp byte ptr es:[55h*4 + 2], 0  
+	jne print                       
+	jmp installer                   ; if not, we install it.
 continue:
-	cmp byte ptr ds:[83h], 55h
-	jne wrong_args
-	mov dx, OFFSET uninstalled
+	cmp byte ptr ds:[83h], 55h      ; If the third argument isn't 'U'
+	jne wrong_args                  ; those are not valid arguments for the program.
+	mov dx, OFFSET uninstalled      ; If it is 'U', we load into dx the offset of the string 'uninstalled'
 	mov cx, 0
 	mov es, cx
-	cmp byte ptr es:[55h*4], 0
-	je test_sec
+	cmp byte ptr es:[55h*4], 0      ; We check if it had not been uninstalled previously.
+	je test_sec						
 	jmp uninstall
 test_sec:
 	cmp byte ptr es:[55h*4 + 2], 0
-	je print
-	jmp uninstall
+	je print						; If it had, we inform the user and end the program.
+	jmp uninstall					; if not, we uninstall it.
 	
 wrong_args:
-	mov dx, OFFSET stringerr
-	jmp print
+	mov dx, OFFSET stringerr        ; If the arguments are not valid, we load into dx the offset 
+	jmp print                       ; of the error string and print it.
 	
 no_args:
-	mov ah, 9h
-	mov dx, OFFSET fernando
+	mov ah, 9h                      ; If there are no arguments, 
+	mov dx, OFFSET fernando         ; We print our names
 	int 21h
 	mov dx, OFFSET blanca
 	int 21h
-	mov dx, OFFSET team
+	mov dx, OFFSET team             ; Our team number
 	int 21h
 	mov bx, 0
 	mov es, bx
-	mov dx, OFFSET string1
-	cmp byte ptr es:[55h*4], 0
-	jne print
-	cmp byte ptr es:[55h*4 + 2], 0
-	jne print
-	mov dx, OFFSET string2
+	mov dx, OFFSET string1          
+	cmp byte ptr es:[55h*4], 0      ; And we check if the interruption has been installed
+	jne print                       ; If the memory area has something written in it, that means
+	cmp byte ptr es:[55h*4 + 2], 0  ; it is installed, so we print the status as 'installed'.
+	jne print                       
+	mov dx, OFFSET string2          ; If not, it is not installed.
 	
 print:
 	mov ah, 9h
@@ -75,46 +75,88 @@ print:
 isr PROC FAR ; Interrupt service routine
 	; Save modified registers
 	push bx ax bp dx ds
+	
 	; Routine instructions
-	mov bp, dx
-	cmp ah, 12h
-	jne decrypt
-	mov bl, 12
-	jmp cesar
+	mov bp, dx   ; We load into BP, DX. So now the string to be encrypted is ds:bp
+	cmp ah, 12h  ; If AH == 12h, it means we have to encrypt the string
+	jne decrypt  ; if not, we may have to decrypt it, or it might be an error.
+	mov bl, 12   ; In encryption we load into BL a 12 (team 9 + 3 = 12)
+	jmp cesar    ; and we start encryption.
 	decrypt:
-		cmp ah, 13h
-		jne fin
-		mov bl, -12
+		cmp ah, 13h   ; If AH == 13h, it means we have to decrypt the string
+		jne fin       ; if not, thats not a supported value for AH and we terminate the program.
+		mov bl, -12   ; In decryption we load into BL a -12  -(team 9 + 3 = 12)
 	cesar:
-		mov al, byte ptr ds:[bp]
-		cmp al, 24h
-		je fin
-		add al, bl
-		cmp al, 127
-		jae over
-		cmp al, 36
-		jbe under
-	cfin:
-		mov byte ptr ds:[bp], al
-		inc bp
-		jmp cesar
+		mov al, byte ptr ds:[bp]  ; Load into AL the first character of the string (ds:bp)
+		cmp al, 24h               ; If AL == '$'
+		je printi                 ; the encryption has finished and we print the result
+		add al, bl                ; if not, we add to the character the encryption/decryption key
+		cmp al, 127               ; If AL > 127
+		jae over                  ; we have passed our limit and have to adjust the result
+		cmp al, 36                ; If AL < 36
+		jbe under                 ; we have passed our limit and have to adjust the result
+	cfin:                         ; Now AL is in the interval (36, 127)
+		mov byte ptr ds:[bp], al  ; Save the result in the original string
+		inc bp                    ; bp = bp + 1
+		jmp cesar                 ; Continue the loop until '$' is read.
 	; Restore modified registers
+	printi:	
+		mov bp, dx			; Load DX into BP (the original offset of the string)
+		
+		mov al, 0Bh         
+		out 70h, al         ; Enable the 0Bh register
+		in al, 71h          ; Read the 0Bh register
+		mov ah, al
+		or ah, 00010000b    ; Set the UIE bit
+		mov al, 0Bh
+		out 70h, al         ; Enable the 0Bh register
+		mov al, ah
+		out 71h, al         ; Write the 0Bh register
+
+		mov ah, 2h          ; Load into AH 2h to print characters into the screen
+	print_loop:
+		call RTC_wait1sec         ; Wait 1 second
+		mov dl, byte ptr ds:[bp]  ; Load into DL one character of the string
+		cmp dl, 24h               ; If DL == '$'
+		je fin                    ; we have printed the whole string
+		int 21h                   ; if not, we print DL
+		inc bp                    ; bp = bp + 1
+		jmp print_loop            ; Continue the loop until the character '$' is encountered.
+		
 	fin:
-		mov ah, 9h
-		int 21h
-		mov ah, 2h
-		mov dl, 13
-		int 21h
+		mov al, 0Bh               
+		out 70h, al         ; Enable the 0Bh register
+		in al, 71h          ; Read the 0Bh register
+		mov ah, al
+		and ah, 11101111b   ; Unset the UIE bit
+		mov al, 0Bh
+		out 70h, al         ; Enable the 0Bh register
+		mov al, ah
+		out 71h, al         ; Write the 0Bh register
+	
 		pop ds dx bp ax bx
 		iret
 		
 	over:
-		sub al, 90
-		jmp cfin
+		sub al, 90    ; Substract 90 to AL to adjust the result to the interval (36, 127)
+		jmp cfin      ; we return to the encryption loop.
 	under:
-		add al, 90
-		jmp cfin
+		add al, 90    ; Add 90 to AL to adjust the result to the interval (36, 127)
+		jmp cfin      ; we return to the encryption loop.
 isr ENDP
+
+RTC_wait1sec PROC
+
+	waiting:
+		mov al, 0Ch
+		out 70h, al         ; Access to 0Ch register of RTC
+		in al, 71h          ; Read the 0Ch register
+		
+		test al, 10010000b  ; Check if the interruption is the time update
+		jz waiting          ; if not, keep waiting
+                            ; if it is, a second has passed
+	ret						
+RTC_wait1sec ENDP
 
 installer PROC
 	mov ax, 0
