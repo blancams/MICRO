@@ -1,3 +1,12 @@
+;**************************************************************************
+; MBS 2018 - PRACTICE 4 - EXERCISE A
+; Team number:
+; 4
+;
+; Authors names:
+; - Blanca Martin Selgas
+; - Fernando Villar Gomez
+;**************************************************************************
 code SEGMENT
 	ASSUME cs : code
 	ORG 256
@@ -7,7 +16,7 @@ start:
 	jmp real_start
 	fernando db "Fernando Villar Gomez", 13, 10, "$"
 	blanca db "Blanca Martin Selgas", 13, 10, "$"
-	team db "Team 9", 13, 10, "$"
+	team db "Team 4", 13, 10, "$"
 	string1 db "Status: Installed", 13, 10, "$"
 	string2 db "Status: Not Installed", 13, 10, "$"
 	stringerr db "Arguments error", 13, 10, "$"
@@ -76,16 +85,16 @@ isr PROC FAR ; Interrupt service routine
 	; Save modified registers
 	push bx ax bp dx ds
 	
-	; Routine instructions
+	; Routine instructions	
 	mov bp, dx   ; We load into BP, DX. So now the string to be encrypted is ds:bp
 	cmp ah, 12h  ; If AH == 12h, it means we have to encrypt the string
 	jne decrypt  ; if not, we may have to decrypt it, or it might be an error.
-	mov bl, 12   ; In encryption we load into BL a 12 (team 9 + 3 = 12)
+	mov bl, 7   ; In encryption we load into BL a 7 (team 4 + 3 = 7)
 	jmp cesar    ; and we start encryption.
 	decrypt:
 		cmp ah, 13h   ; If AH == 13h, it means we have to decrypt the string
 		jne fin       ; if not, thats not a supported value for AH and we terminate the program.
-		mov bl, -12   ; In decryption we load into BL a -12  -(team 9 + 3 = 12)
+		mov bl, -7   ; In decryption we load into BL a -7  -(team 4 + 3 = 7)
 	cesar:
 		mov al, byte ptr ds:[bp]  ; Load into AL the first character of the string (ds:bp)
 		cmp al, 24h               ; If AL == '$'
